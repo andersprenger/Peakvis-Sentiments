@@ -152,7 +152,7 @@ def master_script_sentimental(file_name):
             if sentimental == 2:
                 datate['emotion'] = 'negativo'
             data[index] = datate
-        with open('static/storage/'+ f_no_ext + "_sentimental.json", 'w', encoding='utf-8') as f:
+        with open('static/DATA/dados/'+ f_no_ext + "_sentimental.json", 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 def master_script(file_name):
     f_no_ext = Path(file_name).stem

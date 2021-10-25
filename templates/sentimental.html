@@ -362,7 +362,7 @@ function plot() {
     // 10 minutos
     sleep(600000);
     console.log("Terminou o tempo de carregamento")
-    alert(`Classification successful, file saved with name ${document.formulario.dadossss.value}_sentimental.json`)
+    alert(`Classification successful, file saved with name ${ document.formulario.dadossss.value.split('.')[0]}_sentimental.json`)
     })
 }
 //preprocesssentimental
