@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html>
+<title>Tweet sentimental Visualizer</title>
+<head>
+    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.blue_grey-amber.min.css" />
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:thin,extra-light,light,100,200,300,400,500,600,700,800" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+</head>
+
+<style type="text/css">
+
+    body {
+        width:100%
+    }
+
+    .centered {
+        display: table;
+        margin: 20px auto;
+    }
+
+    .graph {
+        width: 50%;
+        margin: 0 auto;
+    }
+
+    #checkboxes > * {
+        font-size: 14px;
+        display: inline;
+        padding-top: 3px;
+    }
+
+    .measure-group {
+        display:inline;
+    }
+
+    .scale-group {
+        padding-left: 40px;
+        display:inline;
+    }
+
+    button {
+        margin:0 auto;
+        display:block;
+    }
+
+    .measure, .scale {
+    }
+
+    svg {
+        background-color: white;
+    }
+
+    .cells path {
+        fill: none;
+        pointer-events: all;
+    }
+
+    div.tooltip {
+        position: absolute;
+        text-align: left;
+        color: white;
+        white-space: normal;
+        padding: 6px;
+        font-size: 14px;
+        background: rgb(96,125,139);
+        border: 1px solid rgb(96,125,139);
+        border-radius: 2px;
+        pointer-events: none;
+        cursor: none;
+    }
+
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: rgb(96,125,139);
+        shape-rendering: crispEdges;
+    }
+
+    .axis text {
+        font: 10px sans-serif;
+    }
+
+    .continent {}
+
+    .legend {
+        fill: rgba(0,0,0,.87);
+    }
+
+    .article {
+        position: fixed;
+        top: 20px;
+        left: 15px;
+        font-size: 35px;
+        color: rgb(96,125,139);
+    }
+
+    .article-tt {
+        font-size: 14px;
+        background: rgb(96,125,139);
+        border: 1px solid rgb(96,125,139);
+        border-radius: 2px;
+        pointer-events: none;
+    }
+
+
+</style>
+
+<body>
+    <script src='https://d3js.org/d3.v5.min.js'></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/6.2.1/math.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.1.1/wordcloud2.min.js"></script>
+
+
+<div class="peakvis"><!-- container -->
+    <div class="row mb-3"><!-- cabeçalho -->
+		<div class="col-lg-12">
+			<ul>
+				<li style="float:right"><a>
+						<button class="wagGit" onclick="pagGithub()">
+							<span class="icon">
+								<i class="fa fa-github"></i>
+							</span>
+							<span>
+								GitHub
+							</span>
+						</button></a>
+				</li>
+			</ul>
+		</div>
+	</div><!-- close cabeçalho -->
+
+	<form name="formulario"><!-- submit area -->
+		<div class="row mb-2">
+                    <div class="col-lg-4 col-sm-12 mb-2">
+						<input name="dadosss" type="text" class="wagText" placeholder="Data" value="demo_test_covid.json">
+					</div>
+                    <div class="col-lg-4 col-sm-12 mb-2">
+						<input name="dadossss" type="text" class="wagText" placeholder="Data" value="demo_test_covid.json">
+					</div>
+
+		</div>
+	</form><!-- close submit area -->
+
+	<div class="row mb-2"><!-- submit button -->
+        <div class="col-lg-4 col-sm-3">
+            <button type="submit" class="wagButton" onclick="plot_sentimental(); return false">Submit</button>
+		</div>
+        <div class="col-lg-4 col-sm-3">
+            <button type="submit" class="wagButton" onclick="plot();return false">Classify sentimental</button>
+		</div>
+	</div> <!-- cloase submit button -->
+
+
+    <div class="row border-top-area"><!-- grafico -->
+		<h1>Tweet Emotion Chart</h1>
+		<div class="centered" style="padding-top: 25px">
+            <div class="measure-group" data-toggle="buttons-radio">
+                <label for="fname">Filter by words(press enter):</label>
+                <input type="text" id="fname" name="fname" class="teste">
+                <label for="fname">Filter by retweets(press enter):</label>
+                <input type="number" id="fnumber" name="number" class="teste">
+            </div>
+        </div>
+        <div class="centered" style="padding-top: 40px; padding-right: 140px; padding-left: 280px; display:flex;justify-content: space-around;">
+            <button id="previuos" type="button" class="scale wagButton" value="previuos">Previous</button>
+            <button  id="next" type="button"class="scale wagButton" value="next">Next</button>
+        </div>
+
+        <div id="svganchor" class="graph centered">
+        </div>
+        <div id="checkboxes" class="centered">
+            <span style="position:relative; top: 3px">Toggle Emotion:&nbsp;&nbsp;</span>
+            <label class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">
+                <input type="checkbox" value="positivo" class="mdl-checkbox__input continent" checked="">Positive
+                <span class="mdl-checkbox__label" id="positivoColor" style="font-size: 20px; color: #388E3C;">&#9679;&nbsp;&nbsp;</span>
+            </label>
+            <label class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">
+                <input type="checkbox" value="neutro" class="mdl-checkbox__input continent" checked="">Neutral
+                <span class="mdl-checkbox__label" id="neutroColor" style="font-size: 20px; color: #ffff00;">&#9679;&nbsp;&nbsp;</span>
+            </label>
+            <label class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect">
+                <input type="checkbox" value="negativo" class="mdl-checkbox__input continent" checked="">Negative
+                <span class="mdl-checkbox__label" id="negativoColor" style="font-size: 20px; color: #E64A19;">&#9679;&nbsp;&nbsp;</span>
+            </label>
+        </div>
+	</div><!-- close grafico -->
+
+
+</div><!-- cloase container -->
+
+
+
+<script>
+let height = 860;
+let width = 1200;
+let margin = ({top: 0, right: 40, bottom: 34, left: 40});
+let format = d3.timeFormat("%H:%M:%S")
+
+var time = 0
+function setTime() {
+  video = document.getElementById("video")
+  if(time < Math.trunc(video.currentTime)) {
+      time = Math.trunc(video.currentTime)
+      console.log("Tempo mudou", time)
+      redrawTime(time);
+  }
+
+}
+
+function handleWithVideoAndUpdateTweets(functionHandle, indiceBefore, indiceNow, splitPart, indiceActual) {
+  myVar = setInterval(()=> {
+    video = document.getElementById("video")
+  if(time < Math.trunc(video.currentTime)) {
+      time = Math.trunc(video.currentTime)
+      console.log("Tempo mudou", time)
+      if( indiceActual <=splitPart) {
+        indiceBefore = Math.trunc(indiceNow / indiceActual)
+        indiceNow =  Math.trunc(indiceActual * 300)
+        indiceActual = indiceActual += 1
+        functionHandle(time, indiceActual, indiceBefore, indiceNow, splitPart);
+      }
+  }
+}, 10000);
+}
+function call() {
+    nextButton(functionHandle, indiceBefore, indiceNow, splitPart, indiceActual)
+}
+
+function hiddenElement() {
+    document.getElementById("previuos").style.visibility = 'hidden';
+    document.getElementById("next").style.visibility = 'hidden';
+}
+function nextButton(functionHandle, indiceBefore, indiceNow, splitPart, indiceActual, type) {
+      if( indiceActual <=splitPart) {
+          if(indiceActual <= 0) {
+            indiceBefore = 0
+            indiceNow =  300
+          } else {
+            indiceBefore = Math.trunc(indiceNow / indiceActual)
+            indiceNow =  Math.trunc(indiceActual * 300)
+          }
+          if(type == "next") {
+            indiceActual = indiceActual += 1
+          } else {
+            indiceActual = indiceActual -= 1
+          }
+        console.log("Estamos aqui", indiceActual)
+        functionHandle(time, indiceActual, indiceBefore, indiceNow, splitPart);
+      }
+}
+
+function previousButton(functionHandle, indiceBefore, indiceNow, splitPart, indiceActual) {
+      if( indiceActual <=splitPart) {
+        indiceBefore = Math.trunc(indiceNow / indiceActual)
+        indiceNow =  Math.trunc(indiceActual * 300)
+        indiceActual = indiceActual -= 1
+        functionHandle(time, indiceActual, indiceBefore, indiceNow, splitPart);
+      }
+}
+
+
+function randomIntFromInterval(min, max) { // min and max included 
+    return Math.floor(Math.random() * (max - min + 1) + min)
+  }
+
+  const setY = (text) => {
+    if(text === "positivo") {
+      return 60
+    } else  if(text === "neutro") {
+      return 300
+    } else   {
+      return 650
+    }
+  }
+
+  function onlyUnique(value, index, self) {
+    return self.indexOf(value) === index;
+  }
+
+  var max_retweets= 0
+//{country: 'Argentina', total: '2987', population: '38859125', perCapita: '7.687', con
+const setRound = (text) => {
+    let split_valor = Math.ceil(max_retweets / 5)
+  if(text == 0) {
+    return 5
+  }  else  if(text <= split_valor && text > 0) {
+    return 8
+  } else  if(text <= (split_valor + split_valor) && text > split_valor) {
+    return 11
+  }  else  if(text <= (split_valor + split_valor + split_valor) && text > (split_valor + split_valor)) {
+    return 14
+    } 
+  else {
+    return 16
+  }
+}
+
+// Colors used for circles depending on continent
+
+// Colors used for circles depending on continent
+let colors = d3.scaleOrdinal()
+    .domain(["positivo", "neutro", "negativo"])
+    .range(['#388E3C','#ffff00','#E64A19']);
+
+d3.select("#positivoColor").style("color", colors("positivo"));
+d3.select("#negativoColor").style("color", colors("negativo"));
+d3.select("#neutroColor").style("color", colors("neutro"));
+
+
+
+let svg = d3.select("#svganchor")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+let xScale = d3.scaleLinear()
+    .range([margin.left, width - margin.right]);
+
+svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + (height - margin.bottom) + ")");
+
+// Create line that connects circle and X axis
+let xLine = svg.append("line")
+    .attr("stroke", "rgb(96,125,139)")
+    .attr("stroke-dasharray", "1,2");
+
+// Create tooltip div and make it invisible
+let tooltip = d3.select("#svganchor").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+//size and original data
+let originalData = []
+var totalSize = 0
+var indiceBefore = 0
+var indiceNow = 300
+var splitPart = 0
+var indiceActual = 1
+
+function sleep(milliseconds) {
+            const date = Date.now();
+            let currentDate = null;
+            do {
+            currentDate = Date.now();
+            } while (currentDate - date < milliseconds);
+        }
+
+function plot() {
+    d3.json("/static/DATA/dados/" + document.formulario.dadossss.value).then(function (data) {
+        fetch('/preprocesssentimental?a='+document.formulario.dadossss.value).then((response) => {
+            return response.json();
+        })
+    //started count
+    console.log("Começou o tempo de carregamento")
+    alert(`Classification started successfully`)
+    // 10 minutos
+    sleep(600000);
+    console.log("Terminou o tempo de carregamento")
+    alert(`Classification successful, file saved with name ${document.formulario.dadossss.value}_sentimental.json`)
+    })
+}
+//preprocesssentimental
+function plot_sentimental() {
+// Load and process data
+///static/DATA/dados/${document.formulario.dadosss.value}
+d3.json("/static/DATA/dados/" + document.formulario.dadosss.value).then(function (data) {
+    data = data.sort(function(x, y){
+        let segundsy = new Date(y.created_at) 
+        let segundsx = new Date(x.created_at) 
+        return segundsx - segundsy;
+    })
+
+    //data = data.slice(0,300)
+
+
+    let dataSet = data;
+    originalData = data;
+    totalSize = data.length;
+    splitPart = Math.ceil(totalSize / 500);
+    indiceActual = 1
+    indiceNow = 500
+    indiceBefore = 0
+
+    if(data.length > 500) {
+        alert(`Dataset will be split into, ${splitPart} because have ${data.length} and limit support is 500`)
+        redrawTime(time, indiceActual, indiceBefore, indiceNow, splitPart, totalSize);
+        // Listen to click on "scale" buttons and trigger redraw when they are clicked
+        d3.selectAll(".scale").on("click", function() {
+        var type = this.value
+        if( indiceActual < splitPart) {
+            if(type == "next") {
+                console.log("Pressionei next")
+                indiceActual = indiceActual += 1
+                console.log(indiceActual)
+                if(indiceActual <= 1) {
+                indiceActual = 0
+                indiceBefore = 0
+                indiceNow =  500
+                } else {
+                    let middle = indiceBefore
+                    indiceBefore = indiceNow
+                    indiceNow = indiceActual * 500
+            }
+          } else {
+            console.log("Pressionei previous")
+            console.log(indiceActual)
+            if(indiceActual <= 1) {
+                indiceActual = 0
+                indiceBefore = 0
+                indiceNow =  500
+                } else {
+                    indiceBefore = indiceActual * 500
+                    indiceNow =  indiceBefore + 500
+            }
+            indiceActual = indiceActual -= 1
+          }
+            
+        redrawTime(time, indiceActual, indiceBefore, indiceNow, splitPart, totalSize);
+      } else {
+        indiceActual = splitPart - 1
+      }
+    });
+    } else {
+        alert(`Dataset completo`)
+        hiddenElement()
+        redraw()
+    }
+    //functionHandle, indiceBefore, indiceNow, splitPart, indiceActual
+    //handleWithVideoAndUpdateTweets(redrawTime, indiceBefore, indiceNow, splitPart, indiceActual)
+    //for(var i = 0; i < dataSet.length; i ++) {
+    //    if(dataSet[i].retweets > max_retweets) {
+    //        max_retweets = dataSet[i].retweets
+     //   }
+    //}
+    max_retweets = 50
+
+    // Set chart domain max value to the highest total value in data set
+    //xScale.domain(d3.extent(data, function (d) {
+    //    return  new Date(d.created_at);
+    //}));
+
+   // redraw();
+
+    // Trigger filter function whenever checkbox is ticked/unticked
+    d3.selectAll("input").on("change", filter);
+
+    function redraw() {
+
+        xScale = d3.scaleLinear().range([ margin.left, width - margin.right ])
+        xScale.domain(d3.extent(dataSet, function(d) {
+            return new Date(d.created_at);
+        }));
+
+        let xAxis;
+        const format  = d3.timeFormat("%H:%M:%S")
+        xAxis = d3.axisBottom(xScale)
+                .ticks(5)
+               // .tickValues(eixo_x[0])
+                .tickFormat(d3.timeFormat("%H:%M:%S"))
+                //funciona mais ou menos
+                //.tickFormat((d,i) => eixo_x[i])
+                //forEach(item =>return item);
+               // .ticks(3, ".1f")
+                //.tickValues([1,2,3])
+                //.tickSizeOuter(0);
+
+        d3.transition(svg).select(".x.axis")
+            .transition()
+            .duration(1000)
+            .call(xAxis);
+
+        // Create simulation with specified dataset
+        let simulation = d3.forceSimulation(dataSet)
+            // Apply positioning force to push nodes towards desired position along X axis
+            .force("x", d3.forceX(function(d) {
+                // Mapping of values from total/perCapita column of dataset to range of SVG chart (<margin.left, margin.right>)
+                return xScale(new Date(d.created_at).getTime());  // This is the desired position
+            }).strength(2))  // Increase velocity
+            .force("y", d3.forceY(function(d) {
+                // Mapping of values from total/perCapita column of dataset to range of SVG chart (<margin.left, margin.right>)
+                return setY(d.emotion);  // This is the desired position
+            }))  // // Apply positioning force to push nodes towards center along Y axis
+            .force("collide", d3.forceCollide(function(d) {
+                // Mapping of values from total/perCapita column of dataset to range of SVG chart (<margin.left, margin.right>)
+                    return setRound(d.retweets) // This is the desired position
+            })) // Apply collision force with radius of 9 - keeps nodes centers 9 pixels apart
+            .stop();  // Stop simulation from starting automatically
+
+        // Manually run simulation
+        for (let i = 0; i < dataSet.length; ++i) {
+            simulation.tick(5);
+        }
+
+        // Create country circles
+        let countriesCircles = svg.selectAll(".countries")
+            .data(dataSet, function(d) { return d.country });
+
+        countriesCircles.exit()
+            .transition()
+            .duration(1000)
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .remove();
+
+        countriesCircles.enter()
+            .append("circle")
+            .attr("class", "countries")
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r",function(d){ return setRound(d.retweets)})
+            .attr("fill", function(d){ return colors(d.emotion)})
+            .merge(countriesCircles)
+            .transition()
+            .duration(2000)
+            .attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
+
+        // Show tooltip when hovering over circle (data for respective country)
+        d3.selectAll(".countries").on("mousemove", function(d) {
+            tooltip.html(`Tweet: <strong>${d.text}</strong><br>
+                          <span>Time:${d.created_at}</span><br>
+                          <span>Retweets:${d.retweets}</span>
+                          `)
+                .style('top', d3.event.pageY - 12 + 'px')
+                .style('left', d3.event.pageX + 25 + 'px')
+                .style("opacity", 0.9);
+
+            xLine.attr("x1", d3.select(this).attr("cx"))
+                .attr("y1", d3.select(this).attr("cy"))
+                .attr("y2", (height - margin.bottom))
+                .attr("x2",  d3.select(this).attr("cx"))
+                .attr("opacity", 1);
+
+        }).on("mouseout", function(_) {
+            tooltip.style("opacity", 0);
+            xLine.attr("opacity", 0);
+        });
+
+    }
+
+    function redrawTime(time, indiceActual, indiceBefore, indiceNow, splitPart, totalSize) {
+        if(indiceNow >= totalSize) {
+            dataSet = originalData.slice(indiceBefore,totalSize)
+            data = originalData.slice(indiceBefore,totalSize)
+        } else {
+            dataSet = originalData.slice(indiceBefore,indiceNow)
+            data = originalData.slice(indiceBefore,indiceNow)
+        }
+
+    xScale = d3.scaleLinear().range([ margin.left, width - margin.right ])
+    xScale.domain(d3.extent(dataSet, function(d) {
+        return new Date(d.created_at);
+    }));
+
+let xAxis;
+const format  = d3.timeFormat("%H:%M:%S")
+xAxis = d3.axisBottom(xScale)
+        .ticks(5)
+       // .tickValues(eixo_x[0])
+        .tickFormat(d3.timeFormat("%H:%M:%S"))
+        //funciona mais ou menos
+        //.tickFormat((d,i) => eixo_x[i])
+        //forEach(item =>return item);
+       // .ticks(3, ".1f")
+        //.tickValues([1,2,3])
+        //.tickSizeOuter(0);
+
+d3.transition(svg).select(".x.axis")
+    .transition()
+    .duration(1000)
+    .call(xAxis);
+
+// Create simulation with specified dataset
+let simulation = d3.forceSimulation(dataSet)
+    // Apply positioning force to push nodes towards desired position along X axis
+    .force("x", d3.forceX(function(d) {
+        // Mapping of values from total/perCapita column of dataset to range of SVG chart (<margin.left, margin.right>)
+        return xScale(new Date(d.created_at).getTime());  // This is the desired position
+    }).strength(2))  // Increase velocity
+    .force("y", d3.forceY(function(d) {
+        // Mapping of values from total/perCapita column of dataset to range of SVG chart (<margin.left, margin.right>)
+        return setY(d.emotion);  // This is the desired position
+    }))  // // Apply positioning force to push nodes towards center along Y axis
+    .force("collide", d3.forceCollide(function(d) {
+        // Mapping of values from total/perCapita column of dataset to range of SVG chart (<margin.left, margin.right>)
+            return setRound(d.retweets) // This is the desired position
+    })) // Apply collision force with radius of 9 - keeps nodes centers 9 pixels apart
+    .stop();  // Stop simulation from starting automatically
+
+// Manually run simulation
+for (let i = 0; i < dataSet.length; ++i) {
+    simulation.tick(5);
+}
+
+// Create country circles
+let countriesCircles = svg.selectAll(".countries")
+    .data(dataSet, function(d) { return d.country });
+
+countriesCircles.exit()
+    .transition()
+    .duration(1000)
+    .attr("cx", 0)
+    .attr("cy", 0)
+    .remove();
+
+countriesCircles.enter()
+    .append("circle")
+    .attr("class", "countries")
+    .attr("cx", 0)
+    .attr("cy", 0)
+    .attr("r",function(d){ return setRound(d.retweets)})
+    .attr("fill", function(d){ return colors(d.emotion)})
+    .merge(countriesCircles)
+    .transition()
+    .duration(2000)
+    .attr("cx", function(d) { return d.x; })
+    .attr("cy", function(d) { return d.y; });
+
+// Show tooltip when hovering over circle (data for respective country)
+d3.selectAll(".countries").on("mousemove", function(d) {
+    tooltip.html(`Tweet: <strong>${d.text}</strong><br>
+                  <span>Time:${d.created_at}</span><br>
+                  <span>Retweets:${d.retweets}</span>
+                  `)
+        .style('top', d3.event.pageY - 12 + 'px')
+        .style('left', d3.event.pageX + 25 + 'px')
+        .style("opacity", 0.9);
+
+    xLine.attr("x1", d3.select(this).attr("cx"))
+        .attr("y1", d3.select(this).attr("cy"))
+        .attr("y2", (height - margin.bottom))
+        .attr("x2",  d3.select(this).attr("cx"))
+        .attr("opacity", 1);
+
+}).on("mouseout", function(_) {
+    tooltip.style("opacity", 0);
+    xLine.attr("opacity", 0);
+});
+
+}
+
+    // Filter data based on which checkboxes are ticked
+    function filter() {
+
+        function getText() {
+            let text = document.getElementById("fname").value;
+            return text.length > 0 ? text : null;
+        }
+
+        function getNumberRetweets() {
+            let number = document.getElementById("fnumber").value;
+            return Number(number) ?  Number(number) : null;
+        }
+
+        function getCheckedBoxes(checkboxName) {
+
+            let checkboxes = d3.selectAll(checkboxName).nodes();
+            let checkboxesChecked = [];
+            for (let i = 0; i < checkboxes.length; i++) {
+                if (checkboxes[i].checked) {
+                    checkboxesChecked.push(checkboxes[i].defaultValue);
+                }
+            }
+            console.log("Quantidade checks", checkboxesChecked.length)
+            return checkboxesChecked.length > 0 ? checkboxesChecked : null;
+        }
+
+        let checkedBoxes = getCheckedBoxes(".continent");
+
+        let text = getText()
+
+        let number = getNumberRetweets()
+        console.log("Numero dos reetweets", number)
+
+
+        if (checkedBoxes == null && text == null && number == null ) {
+            let newData = [];
+            dataSet = newData;
+            redraw();
+            return;
+        }
+
+        if(checkedBoxes !== null && text !== null && number === null) {
+            let newData = [];
+            for (let i = 0; i < checkedBoxes.length; i++){
+                let newArray = data.filter(function(d) {
+                    return d.emotion === checkedBoxes[i];
+                });
+                let newArrayText = newArray.filter(function(d) {
+                    return d.text.toLowerCase().includes(text.toLowerCase());
+                });
+                Array.prototype.push.apply(newData, newArrayText);
+            }
+            dataSet = newData;
+            redraw();
+            return
+        }
+
+        if(checkedBoxes !== null && text !== null  && number !== null) {
+            let newData = [];
+            
+            for (let i = 0; i < checkedBoxes.length; i++){
+                let newArray = data.filter(function(d) {
+                    return d.emotion === checkedBoxes[i];
+                });
+                let newArrayText = newArray.filter(function(d) {
+                    return d.text.toLowerCase().includes(text.toLowerCase());
+                });
+            let newArrayNumber = newArrayText.filter(function(d) {
+                    return d.retweets >= number;
+                });
+                Array.prototype.push.apply(newData, newArrayNumber);
+            }
+            dataSet = newData;
+            redraw();
+            return
+        }
+
+
+        if(checkedBoxes !== null && text === null  && number === null) {
+            let newData = [];
+            for (let i = 0; i < checkedBoxes.length; i++){
+                let newArray = data.filter(function(d) {
+                    return d.emotion === checkedBoxes[i];
+                });
+                Array.prototype.push.apply(newData, newArray);
+            }
+            dataSet = newData;
+            redraw();
+            return
+        }
+
+        if(checkedBoxes !== null && text === null && number !== null) {
+            let newData = [];
+            for (let i = 0; i < checkedBoxes.length; i++){
+                let newArray = data.filter(function(d) {
+                    return d.emotion === checkedBoxes[i];
+                });
+                let newArrayText = newArray.filter(function(d) {
+                    return d.retweets >= number;
+                });
+                Array.prototype.push.apply(newData, newArrayText);
+            }
+            dataSet = newData;
+            redraw();
+            return
+        }
+
+        
+
+       if(number !== null && checkedBoxes === null && text === null ) {
+            newData = [];
+                let newArray = data.filter(function(d) {
+                    return d.retweets >= number;
+                });
+              Array.prototype.push.apply(newData, newArray);
+            
+            dataSet = newData;
+           redraw();
+           return
+       }
+    }
+
+}).catch(function (error) {
+    if (error) throw error;
+});
+}
+    </script>
+</body>
