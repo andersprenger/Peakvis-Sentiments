@@ -358,11 +358,11 @@ function plot() {
         })
     //started count
     console.log("Começou o tempo de carregamento")
-    alert(`Classification started successfully`)
+    alert(`Classificação iniciada com sucesso`)
     // 10 minutos
-    sleep(600000);
+    sleep(1000);
     console.log("Terminou o tempo de carregamento")
-    alert(`Classification successful, file saved with name ${ document.formulario.dadossss.value.split('.')[0]}_sentimental.json`)
+    alert(`Classificação realizada com sucesso, arquivo salvo com o nome  ${document.formulario.dadossss.value}_sentimental.json`)
     })
 }
 //preprocesssentimental
@@ -451,6 +451,7 @@ d3.json("/static/DATA/dados/" + document.formulario.dadosss.value).then(function
     d3.selectAll("input").on("change", filter);
 
     function redraw() {
+        svg.selectAll('.countries').remove();
 
         xScale = d3.scaleLinear().range([ margin.left, width - margin.right ])
         xScale.domain(d3.extent(dataSet, function(d) {
@@ -502,8 +503,6 @@ d3.json("/static/DATA/dados/" + document.formulario.dadosss.value).then(function
             .data(dataSet, function(d) { return d.country });
 
         countriesCircles.exit()
-            .transition()
-            .duration(1000)
             .attr("cx", 0)
             .attr("cy", 0)
             .remove();
@@ -545,6 +544,7 @@ d3.json("/static/DATA/dados/" + document.formulario.dadosss.value).then(function
     }
 
     function redrawTime(time, indiceActual, indiceBefore, indiceNow, splitPart, totalSize) {
+        svg.selectAll('.countries').remove();
         if(indiceNow >= totalSize) {
             dataSet = originalData.slice(indiceBefore,totalSize)
             data = originalData.slice(indiceBefore,totalSize)
@@ -603,8 +603,6 @@ let countriesCircles = svg.selectAll(".countries")
     .data(dataSet, function(d) { return d.country });
 
 countriesCircles.exit()
-    .transition()
-    .duration(1000)
     .attr("cx", 0)
     .attr("cy", 0)
     .remove();
@@ -647,7 +645,9 @@ d3.selectAll(".countries").on("mousemove", function(d) {
 
     // Filter data based on which checkboxes are ticked
     function filter() {
-
+        //d3.select("svg").remove();
+        //svg.selectAll("*").remove();
+        //svg.selectAll('*').remove();
         function getText() {
             let text = document.getElementById("fname").value;
             return text.length > 0 ? text : null;

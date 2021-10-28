@@ -119,7 +119,7 @@
 			<ul>
 				<li><a class="" href="layout.html"><img src="static/logo.png" height="55" width="200" alt="PeakVis"></a></li>
                 <li>  
-                    <button style="margin-left: 950px; margin-top: 23px;"type="submit" class="wagButton" onclick="pagSentimental();return false">Sentimental Tweets</button>
+                    <button style="margin-left: 950px; margin-top: 24px;"type="submit" class="wagButton" onclick="pagSentimental();return false">Sentimental Tweets</button>
                 </li>
 				<li style="float:right"><a>
 						<button class="wagGit" onclick="pagGithub()">
@@ -268,7 +268,7 @@ function sleep(milliseconds) {
                 console.log("Começou o tempo de carregamento")
                 alert(`Processing started successfully, please wait`)
                 // 10 minutos
-                sleep(600000);
+                sleep(1000);
                 console.log("Terminou o tempo de carregamento")
                 //criação dos eixos X e Y
                 horariosData = data;
@@ -754,9 +754,9 @@ function handleWithVideoAndUpdateTweets(functionHandle, indiceBefore, indiceNow,
         }
     }
 
-    if(valor) {
+    if(valor && currentTime > 0) {
         indiceActual = valor.indexTime
-
+        console.log("Valor do indice Atual", indiceActual, "Valor do split", splitPart)
     if( indiceActual < splitPart) {
             if(indiceActual <= 1) {
                 indiceActual = 0
@@ -945,7 +945,7 @@ d3.json(path).then(function (data) {
     d3.selectAll("input").on("change", filter);
 
     function redraw() {
-
+        svg.selectAll('.countries').remove();
         xScale = d3.scaleLinear().range([ margin.left, width - margin.right ])
         xScale.domain(d3.extent(dataSet, function(d) {
             return new Date(d.created_at);
@@ -1039,10 +1039,13 @@ d3.json(path).then(function (data) {
     }
 
     function redrawTime(time, indiceActual, indiceBefore, indiceNow, splitPart, totalSize) {
+        svg.selectAll('.countries').remove();
         if(indiceNow >= totalSize) {
+            console.log("Cheguei aqui no else")
             dataSet = originalData.slice(indiceBefore,totalSize)
             data = originalData.slice(indiceBefore,totalSize)
         } else {
+            console.log("Cheguei aqui no else")
             dataSet = originalData.slice(indiceBefore,indiceNow)
             data = originalData.slice(indiceBefore,indiceNow)
         }
