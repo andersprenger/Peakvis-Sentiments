@@ -110,6 +110,9 @@ def predict_test(dataset):
     # return data
     return output
 
+@app.route('/feelinganalysis')
+def indexfelling():
+    return render_template('layout_sentimental.html')
 
 @app.route('/')
 def index():
