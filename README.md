@@ -145,9 +145,9 @@ Now when you click on Submit button a new file will be generated, this file will
 This visualization is synchronized with the video. Because of the size of tweets, the visualization will be show each x seconds a tweets, the seconds are defined by the time of video. 
 
 # Screenshot
-<img src="/images/visualization_1.png" width = "300" height="500px"/>
-<img src="/images/filter_word.png" width = "300" height="500px"/>
-<img src="/images/toggle_filter.png"  width = "300" height="500px"/> 
+<img src="/images/visualization_1.png" width = "500" height="600px"/>
+<img src="/images/filter_word.png" width = "600" height="300px"/>
+<img src="/images/toggle_filter.png"  width = "600" height="300px"/> 
 
 ## Dependencies
 
