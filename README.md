@@ -144,7 +144,7 @@ How to use Sentiment analysis visualization:
 Now when you click on Submit button a new file will be generated, this file will be the same name of the JSON file with the extension `_sentimental.json` in the end. This process can take between 10 or 15 minutes depending on the size of tweets,  when this process is finished a message will be shown.  After that, the Tweet emotions chart will be loaded and you can interact with the visualization.
 This visualization is synchronized with the video. Because of the size of tweets, the visualization will be show each x seconds a tweets, the seconds are defined by the time of video. 
 
-# Screenshot
+Screenshot
 <img src="/images/visualization_1.png" width = "800" height="600px"/>
 <img src="/images/filter_word.png" width = "800" height="200px"/>
 <img src="/images/toggle_filter.png"  width = "800" height="200px"/> 
