@@ -135,6 +135,20 @@ Along this section, the application functionalities and features will be approac
 
 ![alt text](https://media.discordapp.net/attachments/830590281966682193/842865964353191996/graphsem.png)
 
+### Sentiment analysis visualization
+Now you can enable sentiment visualization on tweets. To do that you need use the `\feelinganalysis` path at the end of the url. 
+- The visualization of feelings is divided into positive, negative and neutral.
+- You can filter by words and by retweets. Also, you can select the feelings.
+
+How to use Sentiment analysis visualization:
+Now when you click on Submit button a new file will be generated, this file will be the same name of the JSON file with the extension `_sentimental.json` in the end. This process can take between 10 or 15 minutes depending on the size of tweets,  when this process is finished a message will be shown.  After that, the Tweet emotions chart will be loaded and you can interact with the visualization.
+This visualization is synchronized with the video. Because of the size of tweets, the visualization will be show each x seconds a tweets, the seconds are defined by the time of video. 
+
+# Screenshot
+<img src="/images/visualization_1.png" width = "300" height="500px"/>
+<img src="/images/filter_word.png" width = "300" height="500px"/>
+<img src="/images/toggle_filter.png"  width = "300" height="500px"/> 
+
 ## Dependencies
 
 #### JavaScript
