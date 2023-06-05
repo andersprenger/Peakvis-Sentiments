@@ -1,3 +1,18 @@
+#
+# Twitter Sentiment Classifier
+#
+# author: Anderson Sprenger, Gustavo Duarte
+# email: anderson.sprenger@edu.pucrs.br
+# date: June 04, 2023
+#
+# This script will be used to classify the tweets by positive, negative or neutral sentiments.
+#
+# The script will use the following classifiers:
+# - Logistic Regression
+# - Multinomial Naive Bayes
+# - Support Vector Machine
+#
+
 import pandas as pd
 from nltk.tokenize import TweetTokenizer
 from sklearn import svm
@@ -7,70 +22,81 @@ from sklearn.naive_bayes import MultinomialNB
 
 
 class SentimentClassifier:
-
+    # Construtor da classe...
     def __init__(self):
+        # Inicializando o tokenizador de tweets...
         tweet_tokenizer = TweetTokenizer()
 
-        self.vectorizerPositivoNegativo = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
-        self.vectorizerPositivoNeutro = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
-        self.vectorizerNegativoNeutro = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
+        # Inicializando os vetorizadores de palavras...
+        self.vectorizerPositiveNegative = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
+        self.vectorizerPositiveNeutral = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
+        self.vectorizerNegativeNeutral = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
 
-        self.classificadorLRPositivoNegativo = LogisticRegression(random_state=0)
-        self.classificadorMultinomialPositivoNeutro = MultinomialNB()
-        self.classificadorSVMNegativoNeutro = svm.SVC(kernel='linear')
-        self.treinar_classificadores_sentimento()
+        # Inicializando os classificadores...
+        self.classifierLRPositiveNegative = LogisticRegression(random_state=0)
+        self.classifierMultinomialPositiveNeutral = MultinomialNB()
+        self.classifierSVMNegativeNeutral = svm.SVC(kernel='linear')
+        self.train_sentiment_classifiers()
 
-    def treinar_classificadores_sentimento(self):
-        dadosTreinoGeral = pd.read_excel('TweetsTreino70OversimplePreProcessados.xlsx', engine='openpyxl').fillna(' ')
+    # Função para treinar os classificadores de sentimento...
+    def train_sentiment_classifiers(self):
+        # Carregando o dataset de treinamento...
+        generalTrainingData = pd.read_excel('TweetsTreino70OversimplePreProcessados.xlsx', engine='openpyxl').fillna(
+            ' ')
 
-        dadosPositivoNegativoTreino = dadosTreinoGeral[dadosTreinoGeral['SentimentoFinal'] != 0]
-        dadosPositivoNeutroTreino = dadosTreinoGeral[dadosTreinoGeral['SentimentoFinal'] != 2]
-        dadosNegativoNeutroTreino = dadosTreinoGeral[dadosTreinoGeral['SentimentoFinal'] != 1]
+        # Preparando os dados para o treinamento do modelo...
+        positiveNegativeTrainData = generalTrainingData[generalTrainingData['SentimentoFinal'] != 0]
+        positiveNeutralTrainData = generalTrainingData[generalTrainingData['SentimentoFinal'] != 2]
+        negativeNeutralTrainData = generalTrainingData[generalTrainingData['SentimentoFinal'] != 1]
 
-        tweetsParaTreinoPositivoNegativo = dadosPositivoNegativoTreino['full_text'].values
-        tweetsParaTreinoPositivoNeutro = dadosPositivoNeutroTreino['full_text'].values
-        tweetsParaTreinoNegativoNeutro = dadosNegativoNeutroTreino['full_text'].values
+        tweetsForPositiveNegativeTrain = positiveNegativeTrainData['full_text'].values
+        tweetsForPositiveNeutralTrain = positiveNeutralTrainData['full_text'].values
+        tweetsForNegativeNeutralTrain = negativeNeutralTrainData['full_text'].values
 
-        vect_tweetsTreinoPositivoNegativo = self.vectorizerPositivoNegativo.fit_transform(
-            tweetsParaTreinoPositivoNegativo)
-        vect_tweetsTreinoPositivoNeutro = self.vectorizerPositivoNeutro.fit_transform(tweetsParaTreinoPositivoNeutro)
-        vect_tweetsTreinoNegativoNeutro = self.vectorizerNegativoNeutro.fit_transform(tweetsParaTreinoNegativoNeutro)
+        # Vetorizando os dados de treinamento...
+        vectPositiveNegativeTrain = self.vectorizerPositiveNegative.fit_transform(tweetsForPositiveNegativeTrain)
+        vectPositiveNeutralTrain = self.vectorizerPositiveNeutral.fit_transform(tweetsForPositiveNeutralTrain)
+        vectNegativeNeutralTrain = self.vectorizerNegativeNeutral.fit_transform(tweetsForNegativeNeutralTrain)
 
-        classesParaTreinoPositivoNegativo = dadosPositivoNegativoTreino['SentimentoFinal'].values
-        classesParaTreinoPositivoNeutro = dadosPositivoNeutroTreino['SentimentoFinal'].values
-        classesParaTreinoNegativoNeutro = dadosNegativoNeutroTreino['SentimentoFinal'].values
+        # Obtendo as classes dos dados de treinamento...
+        classesPositiveNegativeTrain = positiveNegativeTrainData['SentimentoFinal'].values
+        classesPositiveNeutralTrain = positiveNeutralTrainData['SentimentoFinal'].values
+        classesNegativeNeutralTrain = negativeNeutralTrainData['SentimentoFinal'].values
 
-        self.classificadorLRPositivoNegativo.fit(vect_tweetsTreinoPositivoNegativo, classesParaTreinoPositivoNegativo)
+        # Treinando os classificadores...
+        self.classifierLRPositiveNegative.fit(vectPositiveNegativeTrain, classesPositiveNegativeTrain)
+        self.classifierMultinomialPositiveNeutral.fit(vectPositiveNeutralTrain, classesPositiveNeutralTrain)
+        self.classifierSVMNegativeNeutral.fit(vectNegativeNeutralTrain, classesNegativeNeutralTrain)
 
-        self.classificadorMultinomialPositivoNeutro.fit(vect_tweetsTreinoPositivoNeutro,
-                                                        classesParaTreinoPositivoNeutro)
-        self.classificadorSVMNegativoNeutro.fit(vect_tweetsTreinoNegativoNeutro, classesParaTreinoNegativoNeutro)
-
-    # routes
+    # Função para classificar os tweets...
+    # A função recebe um dicionário com os dados do tweet e retorna um dicionário com o resultado da classificação.
     def predict(self, data) -> dict:
-        # convert data into dataframe
+        # Preparando os dados para a classificação...
         data.update((x, [y]) for x, y in data.items())
         data_df = pd.DataFrame.from_dict(data)
 
-        # train model
-        vect_positivoNegativo = self.vectorizerPositivoNegativo.transform(data_df["text"])
-        rePositivoNegativo = self.classificadorLRPositivoNegativo.predict(vect_positivoNegativo)
-        vect_positivoNeutro = self.vectorizerPositivoNeutro.transform(data_df["text"])
-        rePositivoNeutro = self.classificadorMultinomialPositivoNeutro.predict(vect_positivoNeutro)
-        vect_NegativoNeutro = self.vectorizerNegativoNeutro.transform(data_df["text"])
-        reNegativoNeutro = self.classificadorSVMNegativoNeutro.predict(vect_NegativoNeutro)
+        # Vetorizando os dados para a classificação...
+        vectPositiveNegative = self.vectorizerPositiveNegative.transform(data_df["text"])
+        vectPositiveNeutral = self.vectorizerPositiveNeutral.transform(data_df["text"])
+        vectNegativeNeutral = self.vectorizerNegativeNeutral.transform(data_df["text"])
 
-        resultFinal = []
-        # Get result of 3 model and apply our model
-        if rePositivoNeutro == 0 and reNegativoNeutro == 0:
-            resultFinal.append(0)
-        elif rePositivoNeutro == 1 and rePositivoNegativo == 1:
-            resultFinal.append(1)
-        elif reNegativoNeutro == 2 and rePositivoNegativo == 2:
-            resultFinal.append(2)
+        # Classificando os tweets...
+        resultPositiveNeutral = self.classifierMultinomialPositiveNeutral.predict(vectPositiveNeutral)
+        resultNegativeNeutral = self.classifierSVMNegativeNeutral.predict(vectNegativeNeutral)
+        resultPositiveNegative = self.classifierLRPositiveNegative.predict(vectPositiveNegative)
+
+        finalResult = []
+
+        # Verificando o resultado da classificação...
+        if resultPositiveNeutral == 0 and resultNegativeNeutral == 0:
+            finalResult.append(0)
+        elif resultPositiveNeutral == 1 and resultPositiveNegative == 1:
+            finalResult.append(1)
+        elif resultNegativeNeutral == 2 and resultPositiveNegative == 2:
+            finalResult.append(2)
         else:
-            resultFinal.append(0)
+            finalResult.append(0)
 
-        # send back to browser
-        output = {'results': int(resultFinal[0])}
+        # Retornando o resultado da classificação...
+        output = {'results': int(finalResult[0])}
         return output
