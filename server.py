@@ -1,52 +1,48 @@
-from flask import Flask, render_template, request, jsonify
-import json
 import datetime as dt
-#import sys
+import json
+from csv import DictReader
 from pathlib import Path
+
+import networkx as nx
 import numpy as np
 import pandas as pd
-from csv import DictReader
-from itertools import chain
-import os
-import csv
 import regex as re
-import itertools
-import networkx as nx
-from networkx.algorithms.community import girvan_newman
+from flask import Flask, render_template, request, jsonify
 from networkx.algorithms.community import greedy_modularity_communities
 from networkx.readwrite import json_graph
-import pickle
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfVectorizer
-import nltk
 from nltk.tokenize import TweetTokenizer
 from sklearn import svm
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
+
 app = Flask(__name__, static_url_path='/static/')
+
 # This is a ML model which was integrate with PeakViz
 dadosTreinoGeral = pd.read_excel('TweetsTreino70OversimplePreProcessados.xlsx', engine='openpyxl').fillna(' ')
 dadosPositivoNegativoTreino = dadosTreinoGeral[dadosTreinoGeral['SentimentoFinal'] != 0]
-tweet_tokenizer = TweetTokenizer() 
+tweet_tokenizer = TweetTokenizer()
 vectorizerPositivoNegativo = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
 tweetsParaTreinoPositivoNegativo = dadosPositivoNegativoTreino['full_text'].values
 classesParaTreinoPositivoNegativo = dadosPositivoNegativoTreino['SentimentoFinal'].values
-vect_tweetsTreinoPositivoNegativo = vectorizerPositivoNegativo.fit_transform(tweetsParaTreinoPositivoNegativo) 
-classificadorLRPositivoNegativo = LogisticRegression(random_state=0).fit(vect_tweetsTreinoPositivoNegativo, classesParaTreinoPositivoNegativo)
+vect_tweetsTreinoPositivoNegativo = vectorizerPositivoNegativo.fit_transform(tweetsParaTreinoPositivoNegativo)
+classificadorLRPositivoNegativo = LogisticRegression(random_state=0).fit(vect_tweetsTreinoPositivoNegativo,
+                                                                         classesParaTreinoPositivoNegativo)
 dadosPositivoNeutroTreino = dadosTreinoGeral[dadosTreinoGeral['SentimentoFinal'] != 2]
 vectorizerPositivoNeutro = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
 tweetsParaTreinoPositivoNeutro = dadosPositivoNeutroTreino['full_text'].values
 classesParaTreinoPositivoNeutro = dadosPositivoNeutroTreino['SentimentoFinal'].values
-vect_tweetsTreinoPositivoNeutro = vectorizerPositivoNeutro.fit_transform(tweetsParaTreinoPositivoNeutro) 
+vect_tweetsTreinoPositivoNeutro = vectorizerPositivoNeutro.fit_transform(tweetsParaTreinoPositivoNeutro)
 classificadorMultinomialPositivoNeutro = MultinomialNB()
-classificadorMultinomialPositivoNeutro.fit(vect_tweetsTreinoPositivoNeutro, classesParaTreinoPositivoNeutro) 
+classificadorMultinomialPositivoNeutro.fit(vect_tweetsTreinoPositivoNeutro, classesParaTreinoPositivoNeutro)
 dadosNegativoNeutroTreino = dadosTreinoGeral[dadosTreinoGeral['SentimentoFinal'] != 1]
 vectorizerNegativoNeutro = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
 tweetsParaTreinoNegativoNeutro = dadosNegativoNeutroTreino['full_text'].values
 classesParaTreinoNegativoNeutro = dadosNegativoNeutroTreino['SentimentoFinal'].values
-vect_tweetsTreinoNegativoNeutro = vectorizerNegativoNeutro.fit_transform(tweetsParaTreinoNegativoNeutro) 
+vect_tweetsTreinoNegativoNeutro = vectorizerNegativoNeutro.fit_transform(tweetsParaTreinoNegativoNeutro)
 classificadorSVMNegativoNeutro = svm.SVC(kernel='linear')
-classificadorSVMNegativoNeutro.fit(vect_tweetsTreinoNegativoNeutro, classesParaTreinoNegativoNeutro)  
+classificadorSVMNegativoNeutro.fit(vect_tweetsTreinoNegativoNeutro, classesParaTreinoNegativoNeutro)
+
 
 # routes
 @app.route('/sentimental', methods=['POST'])
@@ -58,31 +54,31 @@ def predict():
     data.update((x, [y]) for x, y in data.items())
     data_df = pd.DataFrame.from_dict(data)
     # train model
-    vect_positivoNegativo = vectorizerPositivoNegativo.transform(data_df["text"]) 
+    vect_positivoNegativo = vectorizerPositivoNegativo.transform(data_df["text"])
     rePositivoNegativo = classificadorLRPositivoNegativo.predict(vect_positivoNegativo)
-    vect_positivoNeutro = vectorizerPositivoNeutro.transform(data_df["text"]) 
+    vect_positivoNeutro = vectorizerPositivoNeutro.transform(data_df["text"])
     rePositivoNeutro = classificadorMultinomialPositivoNeutro.predict(vect_positivoNeutro)
-    vect_NegativoNeutro = vectorizerNegativoNeutro.transform(data_df["text"]) 
+    vect_NegativoNeutro = vectorizerNegativoNeutro.transform(data_df["text"])
     reNegativoNeutro = classificadorSVMNegativoNeutro.predict(vect_NegativoNeutro)
 
     resultFinal = []
     # Get result of 3 model and apply our model
-    if(rePositivoNeutro == 0 and reNegativoNeutro == 0):
+    if rePositivoNeutro == 0 and reNegativoNeutro == 0:
         resultFinal.append(0)
-    elif(rePositivoNeutro == 1 and rePositivoNegativo == 1):
-         resultFinal.append(1)
-    elif(reNegativoNeutro == 2 and  rePositivoNegativo == 2):
-         resultFinal.append(2)
+    elif rePositivoNeutro == 1 and rePositivoNegativo == 1:
+        resultFinal.append(1)
+    elif reNegativoNeutro == 2 and rePositivoNegativo == 2:
+        resultFinal.append(2)
     else:
         resultFinal.append(0)
 
-    
     # send back to browser
     output = {'results': int(resultFinal[0])}
     # return data
     return jsonify(results=output)
 
-#method to predict locally without take a lot time like REST request
+
+# method to predict locally without take a lot of time like REST request
 def predict_test(dataset):
     # get data
     data = json.loads(dataset)
@@ -90,19 +86,19 @@ def predict_test(dataset):
     # convert data into dataframe
     data.update((x, [y]) for x, y in data.items())
     data_df = pd.DataFrame.from_dict(data)
-    vect_positivoNegativo = vectorizerPositivoNegativo.transform(data_df["text"]) 
+    vect_positivoNegativo = vectorizerPositivoNegativo.transform(data_df["text"])
     rePositivoNegativo = classificadorLRPositivoNegativo.predict(vect_positivoNegativo)
-    vect_positivoNeutro = vectorizerPositivoNeutro.transform(data_df["text"]) 
+    vect_positivoNeutro = vectorizerPositivoNeutro.transform(data_df["text"])
     rePositivoNeutro = classificadorMultinomialPositivoNeutro.predict(vect_positivoNeutro)
-    vect_NegativoNeutro = vectorizerNegativoNeutro.transform(data_df["text"]) 
+    vect_NegativoNeutro = vectorizerNegativoNeutro.transform(data_df["text"])
     reNegativoNeutro = classificadorSVMNegativoNeutro.predict(vect_NegativoNeutro)
     resultFinal = []
-    if(rePositivoNeutro == 0 and reNegativoNeutro == 0):
+    if (rePositivoNeutro == 0 and reNegativoNeutro == 0):
         resultFinal.append(0)
-    elif(rePositivoNeutro == 1 and rePositivoNegativo == 1):
-         resultFinal.append(1)
-    elif(reNegativoNeutro == 2 and  rePositivoNegativo == 2):
-         resultFinal.append(2)
+    elif (rePositivoNeutro == 1 and rePositivoNegativo == 1):
+        resultFinal.append(1)
+    elif (reNegativoNeutro == 2 and rePositivoNegativo == 2):
+        resultFinal.append(2)
     else:
         resultFinal.append(0)
 
@@ -110,13 +106,16 @@ def predict_test(dataset):
     # return data
     return output
 
+
 @app.route('/feelinganalysis')
 def indexfelling():
     return render_template('layout_sentimental.html')
 
+
 @app.route('/')
 def index():
     return render_template('layout.html')
+
 
 @app.route('/tweetanalytics')
 def analytics():
@@ -129,14 +128,17 @@ def background_process_test():
     master_script(fname)
     return 'nop'
 
+
 @app.route('/preprocesssentimental')
 def background_process_sentimental_test():
     fname = request.args.get('a')
     master_script_sentimental(fname)
     return 'nop'
+
+
 def master_script_sentimental(file_name):
     f_no_ext = Path(file_name).stem
-    #handle with sentimental file.
+    # handle with sentimental file.
     if Path('static/DATA/dados/' + f_no_ext + "_sentimental.json").is_file():
         print('done sentimental')
     else:
@@ -146,7 +148,7 @@ def master_script_sentimental(file_name):
             datate = data[index]
             datate_request = json.dumps(datate)
             send_request = predict_test(datate_request)
-            response =send_request
+            response = send_request
             sentimental = response['results']
             if sentimental == 1:
                 datate['emotion'] = 'positivo'
@@ -155,16 +157,20 @@ def master_script_sentimental(file_name):
             if sentimental == 2:
                 datate['emotion'] = 'negativo'
             data[index] = datate
-        with open('static/DATA/dados/'+ f_no_ext + "_sentimental.json", 'w', encoding='utf-8') as f:
+        with open('static/DATA/dados/' + f_no_ext + "_sentimental.json", 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
+
+
 def master_script(file_name):
     f_no_ext = Path(file_name).stem
 
-    if Path('static/storage/' + f_no_ext + "_WC.txt").is_file() and Path('static/storage/' + f_no_ext + "_RT.txt").is_file() and Path('static/storage/' + f_no_ext + "_sentimental.json").is_file():
+    if Path('static/storage/' + f_no_ext + "_WC.txt").is_file() and Path(
+            'static/storage/' + f_no_ext + "_RT.txt").is_file() and Path(
+            'static/storage/' + f_no_ext + "_sentimental.json").is_file():
         print('done')
     else:
         arq = open(file='static/DATA/dados/' + file_name, mode='r', encoding="utf-8")
-        wc = open(file='static/storage/'+ f_no_ext + "_WC.txt", mode='w', encoding="utf-8")
+        wc = open(file='static/storage/' + f_no_ext + "_WC.txt", mode='w', encoding="utf-8")
         toprt = open(file='static/storage/' + f_no_ext + "_RT.txt", mode='w', encoding="utf-8")
 
         data = json.load(arq)
@@ -193,12 +199,12 @@ def master_script(file_name):
                     # print(new_str)
                 tweet['text'] = new_str
 
-        #oi = dt.datetime.strptime(data[0]["created_at"], "%Y-%m-%d %H:%M:%S")
-        #oi2 = dt.datetime.strptime(data[20176]["created_at"], "%Y-%m-%d %H:%M:%S")
-        #print((oi - oi2).seconds)
+        # oi = dt.datetime.strptime(data[0]["created_at"], "%Y-%m-%d %H:%M:%S")
+        # oi2 = dt.datetime.strptime(data[20176]["created_at"], "%Y-%m-%d %H:%M:%S")
+        # print((oi - oi2).seconds)
         started_time = dt.datetime.strptime(
-            data[len(data)-1]["created_at"], "%Y-%m-%d %H:%M:%S") + dt.timedelta(seconds=1)
-        for i in range(len(data)-1, -1, -1):
+            data[len(data) - 1]["created_at"], "%Y-%m-%d %H:%M:%S") + dt.timedelta(seconds=1)
+        for i in range(len(data) - 1, -1, -1):
             if dt.datetime.strptime(data[i]["created_at"], "%Y-%m-%d %H:%M:%S") >= started_time:
                 started_time = dt.datetime.strptime(
                     data[i]["created_at"], "%Y-%m-%d %H:%M:%S") + dt.timedelta(seconds=1)
@@ -216,10 +222,10 @@ def master_script(file_name):
                     stringg = ""
                     for j in range(tam):
                         stringg = stringg + resp[j][0] + \
-                            "," + str(resp[j][1]) + ","
+                                  "," + str(resp[j][1]) + ","
                     stringg = stringg[0:-1] + "\n"
                     wc.write(stringg)
-                    #wc.write(str(resp[0:10])[1:-1].replace("(", " ").replace("),", ",").replace(")", " ") +"\n")
+                    # wc.write(str(resp[0:10])[1:-1].replace("(", " ").replace("),", ",").replace(")", " ") +"\n")
 
                     # top retweets
                     resp = sorted(
@@ -232,10 +238,10 @@ def master_script(file_name):
                     stringg = ""
                     for j in range(tam):
                         stringg = stringg + resp[j][0] + \
-                            "," + str(resp[j][1]) + ","
+                                  "," + str(resp[j][1]) + ","
                     stringg = stringg[0:-1] + "\n"
                     toprt.write(stringg)
-                    #toprt.write(str(resp[0:10])[1:-1].replace("(", " ").replace("),", ",").replace(")", " ") +"\n")
+                    # toprt.write(str(resp[0:10])[1:-1].replace("(", " ").replace("),", ",").replace(")", " ") +"\n")
 
             else:
                 # word cloud
@@ -266,7 +272,7 @@ def master_script(file_name):
             datate = data[index]
             datate_request = json.dumps(datate)
             send_request = predict_test(datate_request)
-            response =send_request
+            response = send_request
             sentimental = response['results']
             if sentimental == 1:
                 datate['emotion'] = 'positivo'
@@ -275,7 +281,7 @@ def master_script(file_name):
             if sentimental == 2:
                 datate['emotion'] = 'negativo'
             data[index] = datate
-        with open('static/storage/'+ f_no_ext + "_sentimental.json", 'w', encoding='utf-8') as f:
+        with open('static/storage/' + f_no_ext + "_sentimental.json", 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 
     if Path('static/storage/' + f_no_ext + "_graph.json").is_file():
@@ -335,7 +341,7 @@ def master_script(file_name):
                 nLinhas = 0
                 vNumeros = []
                 for i in range(nPalavras):
-                    b = nPalavras-(i+1)
+                    b = nPalavras - (i + 1)
                     if b > 0:
                         vNumeros.append(b)
                     nLinhas = nLinhas + b
@@ -357,7 +363,7 @@ def master_script(file_name):
 
                 Mposicao = []
                 posicaoC2 = []
-                for i in range(int(nLinhas/nPalavras)):
+                for i in range(int(nLinhas / nPalavras)):
                     for j in range(nPalavras):
                         posicaoC2.append(vPalavras[j])
                         Mposicao.append(j)
@@ -366,8 +372,8 @@ def master_script(file_name):
                 c2[:] = [posicaoC2[i] for i in ordemC2]
                 col2.extend(c2)
 
-        #col1_array = np.array(col1)
-        #col2_array = np.array(col2)
+        # col1_array = np.array(col1)
+        # col2_array = np.array(col2)
 
         matriz = np.c_[col1, col2]
         df = pd.DataFrame(columns=["source", "target"], data=matriz)
