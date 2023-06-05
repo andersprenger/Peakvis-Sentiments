@@ -155,7 +155,7 @@ function sleep(milliseconds) {
 
 function plot() {
     d3.json("/static/DATA/dados/" + document.formulario.dadossss.value).then(function (data) {
-        fetch('/preprocesssentimental?a=' + document.formulario.dadossss.value).then((response) => {
+        fetch('/preprocess-sentimental?a=' + document.formulario.dadossss.value).then((response) => {
             return response.json();
         })
         //started count

@@ -11,7 +11,7 @@ function pagGithub() {
 }
 
 function pagSentimental() {
-    window.location.assign("/tweetanalytics");
+    window.location.assign("/tweet-analytics");
 }
 
 function plotVideo() {

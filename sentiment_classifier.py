@@ -74,10 +74,3 @@ class SentimentClassifier:
         # send back to browser
         output = {'results': int(resultFinal[0])}
         return output
-
-    # method to predict locally without take a lot of time like REST request
-    # def predict_test(self, dataset) -> dict:
-    #     # get data
-    #     data = json.loads(dataset)
-    #
-    #     return self.predict(data)
