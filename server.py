@@ -16,32 +16,36 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
 
+from sentiment_classifier import SentimentClassifier
+
 app = Flask(__name__, static_url_path='/static/')
 
+classifier = SentimentClassifier()
+
 # This is a ML model which was integrate with PeakViz
-dadosTreinoGeral = pd.read_excel('TweetsTreino70OversimplePreProcessados.xlsx', engine='openpyxl').fillna(' ')
-dadosPositivoNegativoTreino = dadosTreinoGeral[dadosTreinoGeral['SentimentoFinal'] != 0]
-tweet_tokenizer = TweetTokenizer()
-vectorizerPositivoNegativo = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
-tweetsParaTreinoPositivoNegativo = dadosPositivoNegativoTreino['full_text'].values
-classesParaTreinoPositivoNegativo = dadosPositivoNegativoTreino['SentimentoFinal'].values
-vect_tweetsTreinoPositivoNegativo = vectorizerPositivoNegativo.fit_transform(tweetsParaTreinoPositivoNegativo)
-classificadorLRPositivoNegativo = LogisticRegression(random_state=0).fit(vect_tweetsTreinoPositivoNegativo,
-                                                                         classesParaTreinoPositivoNegativo)
-dadosPositivoNeutroTreino = dadosTreinoGeral[dadosTreinoGeral['SentimentoFinal'] != 2]
-vectorizerPositivoNeutro = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
-tweetsParaTreinoPositivoNeutro = dadosPositivoNeutroTreino['full_text'].values
-classesParaTreinoPositivoNeutro = dadosPositivoNeutroTreino['SentimentoFinal'].values
-vect_tweetsTreinoPositivoNeutro = vectorizerPositivoNeutro.fit_transform(tweetsParaTreinoPositivoNeutro)
-classificadorMultinomialPositivoNeutro = MultinomialNB()
-classificadorMultinomialPositivoNeutro.fit(vect_tweetsTreinoPositivoNeutro, classesParaTreinoPositivoNeutro)
-dadosNegativoNeutroTreino = dadosTreinoGeral[dadosTreinoGeral['SentimentoFinal'] != 1]
-vectorizerNegativoNeutro = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
-tweetsParaTreinoNegativoNeutro = dadosNegativoNeutroTreino['full_text'].values
-classesParaTreinoNegativoNeutro = dadosNegativoNeutroTreino['SentimentoFinal'].values
-vect_tweetsTreinoNegativoNeutro = vectorizerNegativoNeutro.fit_transform(tweetsParaTreinoNegativoNeutro)
-classificadorSVMNegativoNeutro = svm.SVC(kernel='linear')
-classificadorSVMNegativoNeutro.fit(vect_tweetsTreinoNegativoNeutro, classesParaTreinoNegativoNeutro)
+# dadosTreinoGeral = pd.read_excel('TweetsTreino70OversimplePreProcessados.xlsx', engine='openpyxl').fillna(' ')
+# dadosPositivoNegativoTreino = dadosTreinoGeral[dadosTreinoGeral['SentimentoFinal'] != 0]
+# tweet_tokenizer = TweetTokenizer()
+# vectorizerPositivoNegativo = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
+# tweetsParaTreinoPositivoNegativo = dadosPositivoNegativoTreino['full_text'].values
+# classesParaTreinoPositivoNegativo = dadosPositivoNegativoTreino['SentimentoFinal'].values
+# vect_tweetsTreinoPositivoNegativo = vectorizerPositivoNegativo.fit_transform(tweetsParaTreinoPositivoNegativo)
+# classificadorLRPositivoNegativo = LogisticRegression(random_state=0).fit(vect_tweetsTreinoPositivoNegativo,
+#                                                                          classesParaTreinoPositivoNegativo)
+# dadosPositivoNeutroTreino = dadosTreinoGeral[dadosTreinoGeral['SentimentoFinal'] != 2]
+# vectorizerPositivoNeutro = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
+# tweetsParaTreinoPositivoNeutro = dadosPositivoNeutroTreino['full_text'].values
+# classesParaTreinoPositivoNeutro = dadosPositivoNeutroTreino['SentimentoFinal'].values
+# vect_tweetsTreinoPositivoNeutro = vectorizerPositivoNeutro.fit_transform(tweetsParaTreinoPositivoNeutro)
+# classificadorMultinomialPositivoNeutro = MultinomialNB()
+# classificadorMultinomialPositivoNeutro.fit(vect_tweetsTreinoPositivoNeutro, classesParaTreinoPositivoNeutro)
+# dadosNegativoNeutroTreino = dadosTreinoGeral[dadosTreinoGeral['SentimentoFinal'] != 1]
+# vectorizerNegativoNeutro = CountVectorizer(analyzer="word", tokenizer=tweet_tokenizer.tokenize)
+# tweetsParaTreinoNegativoNeutro = dadosNegativoNeutroTreino['full_text'].values
+# classesParaTreinoNegativoNeutro = dadosNegativoNeutroTreino['SentimentoFinal'].values
+# vect_tweetsTreinoNegativoNeutro = vectorizerNegativoNeutro.fit_transform(tweetsParaTreinoNegativoNeutro)
+# classificadorSVMNegativoNeutro = svm.SVC(kernel='linear')
+# classificadorSVMNegativoNeutro.fit(vect_tweetsTreinoNegativoNeutro, classesParaTreinoNegativoNeutro)
 
 
 # routes
@@ -50,32 +54,34 @@ def predict():
     # get data from Request
     data = request.get_json(force=True)
 
-    # convert data into dataframe
-    data.update((x, [y]) for x, y in data.items())
-    data_df = pd.DataFrame.from_dict(data)
-    # train model
-    vect_positivoNegativo = vectorizerPositivoNegativo.transform(data_df["text"])
-    rePositivoNegativo = classificadorLRPositivoNegativo.predict(vect_positivoNegativo)
-    vect_positivoNeutro = vectorizerPositivoNeutro.transform(data_df["text"])
-    rePositivoNeutro = classificadorMultinomialPositivoNeutro.predict(vect_positivoNeutro)
-    vect_NegativoNeutro = vectorizerNegativoNeutro.transform(data_df["text"])
-    reNegativoNeutro = classificadorSVMNegativoNeutro.predict(vect_NegativoNeutro)
+    return classifier.predict(data)
 
-    resultFinal = []
-    # Get result of 3 model and apply our model
-    if rePositivoNeutro == 0 and reNegativoNeutro == 0:
-        resultFinal.append(0)
-    elif rePositivoNeutro == 1 and rePositivoNegativo == 1:
-        resultFinal.append(1)
-    elif reNegativoNeutro == 2 and rePositivoNegativo == 2:
-        resultFinal.append(2)
-    else:
-        resultFinal.append(0)
-
-    # send back to browser
-    output = {'results': int(resultFinal[0])}
-    # return data
-    return jsonify(results=output)
+    # # convert data into dataframe
+    # data.update((x, [y]) for x, y in data.items())
+    # data_df = pd.DataFrame.from_dict(data)
+    # # train model
+    # vect_positivoNegativo = vectorizerPositivoNegativo.transform(data_df["text"])
+    # rePositivoNegativo = classificadorLRPositivoNegativo.predict(vect_positivoNegativo)
+    # vect_positivoNeutro = vectorizerPositivoNeutro.transform(data_df["text"])
+    # rePositivoNeutro = classificadorMultinomialPositivoNeutro.predict(vect_positivoNeutro)
+    # vect_NegativoNeutro = vectorizerNegativoNeutro.transform(data_df["text"])
+    # reNegativoNeutro = classificadorSVMNegativoNeutro.predict(vect_NegativoNeutro)
+    #
+    # resultFinal = []
+    # # Get result of 3 model and apply our model
+    # if rePositivoNeutro == 0 and reNegativoNeutro == 0:
+    #     resultFinal.append(0)
+    # elif rePositivoNeutro == 1 and rePositivoNegativo == 1:
+    #     resultFinal.append(1)
+    # elif reNegativoNeutro == 2 and rePositivoNegativo == 2:
+    #     resultFinal.append(2)
+    # else:
+    #     resultFinal.append(0)
+    #
+    # # send back to browser
+    # output = {'results': int(resultFinal[0])}
+    # # return data
+    # return jsonify(results=output)
 
 
 # method to predict locally without take a lot of time like REST request
@@ -83,28 +89,29 @@ def predict_test(dataset):
     # get data
     data = json.loads(dataset)
 
-    # convert data into dataframe
-    data.update((x, [y]) for x, y in data.items())
-    data_df = pd.DataFrame.from_dict(data)
-    vect_positivoNegativo = vectorizerPositivoNegativo.transform(data_df["text"])
-    rePositivoNegativo = classificadorLRPositivoNegativo.predict(vect_positivoNegativo)
-    vect_positivoNeutro = vectorizerPositivoNeutro.transform(data_df["text"])
-    rePositivoNeutro = classificadorMultinomialPositivoNeutro.predict(vect_positivoNeutro)
-    vect_NegativoNeutro = vectorizerNegativoNeutro.transform(data_df["text"])
-    reNegativoNeutro = classificadorSVMNegativoNeutro.predict(vect_NegativoNeutro)
-    resultFinal = []
-    if (rePositivoNeutro == 0 and reNegativoNeutro == 0):
-        resultFinal.append(0)
-    elif (rePositivoNeutro == 1 and rePositivoNegativo == 1):
-        resultFinal.append(1)
-    elif (reNegativoNeutro == 2 and rePositivoNegativo == 2):
-        resultFinal.append(2)
-    else:
-        resultFinal.append(0)
-
-    output = {'results': int(resultFinal[0])}
-    # return data
-    return output
+    return classifier.predict(data)
+    # # convert data into dataframe
+    # data.update((x, [y]) for x, y in data.items())
+    # data_df = pd.DataFrame.from_dict(data)
+    # vect_positivoNegativo = vectorizerPositivoNegativo.transform(data_df["text"])
+    # rePositivoNegativo = classificadorLRPositivoNegativo.predict(vect_positivoNegativo)
+    # vect_positivoNeutro = vectorizerPositivoNeutro.transform(data_df["text"])
+    # rePositivoNeutro = classificadorMultinomialPositivoNeutro.predict(vect_positivoNeutro)
+    # vect_NegativoNeutro = vectorizerNegativoNeutro.transform(data_df["text"])
+    # reNegativoNeutro = classificadorSVMNegativoNeutro.predict(vect_NegativoNeutro)
+    # resultFinal = []
+    # if (rePositivoNeutro == 0 and reNegativoNeutro == 0):
+    #     resultFinal.append(0)
+    # elif (rePositivoNeutro == 1 and rePositivoNegativo == 1):
+    #     resultFinal.append(1)
+    # elif (reNegativoNeutro == 2 and rePositivoNegativo == 2):
+    #     resultFinal.append(2)
+    # else:
+    #     resultFinal.append(0)
+    #
+    # output = {'results': int(resultFinal[0])}
+    # # return data
+    # return output
 
 
 @app.route('/feelinganalysis')
